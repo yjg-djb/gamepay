@@ -112,5 +112,8 @@ Untitled-*.html
 Untitled-*.md
 xuqiu*.md
 
+# Documentation (internal docs, not for repository)
+docs/
+
 # Design files and screenshots (not part of the codebase)
 app-pay.jp/
