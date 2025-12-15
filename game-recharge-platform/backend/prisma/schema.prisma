@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  MERCHANT
+}
+
+enum MerchantStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELED
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+}
+
+model User {
+  id        String   @id @default(cuid())
+  auth0Sub  String   @unique
+  email     String?
+  name      String?
+  role      UserRole @default(USER)
+
+  merchants            MerchantUser[]
+  orders               Order[]
+  merchantApplications MerchantApplication[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Merchant {
+  id        String         @id @default(cuid())
+  name      String
+  email     String?
+  status    MerchantStatus @default(ACTIVE)
+
+  users     MerchantUser[]
+  games     Game[]
+  merchantGames MerchantGame[]
+  orders    Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MerchantGame {
+  merchantId String
+  gameId     String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  game     Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@id([merchantId, gameId])
+  @@index([merchantId])
+  @@index([gameId])
+}
+
+model MerchantUser {
+  merchantId String
+  userId     String
+  // merchant-level role (optional extension); for now use User.role + ownership
+  createdAt  DateTime @default(now())
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([merchantId, userId])
+}
+
+model Game {
+  id        String   @id @default(cuid())
+  merchantId String
+
+  nameZh    String
+  nameJa    String
+  nameEn    String
+
+  developer String
+  iconUrl   String
+  bannerUrl String
+  badge     String
+  rating    Float    @default(4.5)
+  downloads String   @default("0")
+
+  merchant  Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  skus      SKU[]
+  merchantGames MerchantGame[]
+  orders    Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SKU {
+  id           String  @id @default(cuid())
+  gameId       String
+
+  nameZh       String
+  nameJa       String
+  nameEn       String
+
+  price        Int
+  originalPrice Int
+  bonus        String
+  currency     String
+  limited      Boolean @default(false)
+  imageUrl     String?
+  sortOrder    Int     @default(0)
+
+  game         Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  orders       Order[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Order {
+  id                String          @id @default(cuid())
+  userId            String
+  merchantId        String
+  gameId            String
+  skuId             String
+  visitorId         String?
+  amount            Int
+  currency          String
+  status            OrderStatus     @default(PENDING)
+  provider          PaymentProvider?
+  providerPaymentId String?
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  game     Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  sku      SKU      @relation(fields: [skuId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([merchantId, createdAt])
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model MerchantApplication {
+  id           String            @id @default(cuid())
+  userId       String
+  companyName  String
+  contactName  String
+  contactEmail String
+  description  String
+  status       ApplicationStatus @default(PENDING)
+  reviewNote   String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+

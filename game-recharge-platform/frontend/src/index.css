@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.badge-hot {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+}
+
+.badge-sale {
+  background: linear-gradient(135deg, #20bf6b, #0fb9b1);
+}
+
+.badge-new {
+  background: linear-gradient(135deg, #a55eea, #8854d0);
+}
+
